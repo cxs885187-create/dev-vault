@@ -3,10 +3,10 @@
   <p>🚀 卸载认知负荷，把不懂的代码、晦涩的名词和庞杂的项目结构统统丢给 AI。</p>
   
   <p>
-    <a href="[https://github.com/cxs885187-create/dev-vault/stargazers](https://github.com/cxs885187-create/dev-vault/stargazers)"><img src="[https://img.shields.io/github/stars/cxs885187-create/dev-vault?style=flat-square&color=blue](https://img.shields.io/github/stars/cxs885187-create/dev-vault?style=flat-square&color=blue)" alt="Stars"></a>
-    <a href="[https://github.com/cxs885187-create/dev-vault/network/members](https://github.com/cxs885187-create/dev-vault/network/members)"><img src="[https://img.shields.io/github/forks/cxs885187-create/dev-vault?style=flat-square&color=blue](https://img.shields.io/github/forks/cxs885187-create/dev-vault?style=flat-square&color=blue)" alt="Forks"></a>
-    <a href="[https://github.com/cxs885187-create/dev-vault/issues](https://github.com/cxs885187-create/dev-vault/issues)"><img src="[https://img.shields.io/github/issues/cxs885187-create/dev-vault?style=flat-square&color=blue](https://img.shields.io/github/issues/cxs885187-create/dev-vault?style=flat-square&color=blue)" alt="Issues"></a>
-    <a href="[https://github.com/cxs885187-create/dev-vault/blob/main/LICENSE](https://github.com/cxs885187-create/dev-vault/blob/main/LICENSE)"><img src="[https://img.shields.io/github/license/cxs885187-create/dev-vault?style=flat-square&color=blue](https://img.shields.io/github/license/cxs885187-create/dev-vault?style=flat-square&color=blue)" alt="License"></a>
+    <a href="https://github.com/cxs885187-create/dev-vault/stargazers"><img src="https://img.shields.io/github/stars/cxs885187-create/dev-vault?style=flat-square&color=blue" alt="Stars"></a>
+    <a href="https://github.com/cxs885187-create/dev-vault/network/members"><img src="https://img.shields.io/github/forks/cxs885187-create/dev-vault?style=flat-square&color=blue" alt="Forks"></a>
+    <a href="https://github.com/cxs885187-create/dev-vault/issues"><img src="https://img.shields.io/github/issues/cxs885187-create/dev-vault?style=flat-square&color=blue" alt="Issues"></a>
+    <a href="https://github.com/cxs885187-create/dev-vault/blob/main/LICENSE"><img src="https://img.shields.io/github/license/cxs885187-create/dev-vault?style=flat-square&color=blue" alt="License"></a>
   </p>
 </div>
 
@@ -51,5 +51,51 @@
 
 **1. 克隆项目**
 ```bash
-git clone https://github.com/cxs885187-create/dev-vault.git
+git clone [https://github.com/cxs885187-create/dev-vault.git](https://github.com/cxs885187-create/dev-vault.git)
 cd dev-vault
+```
+
+**2. 安装依赖**
+```bash
+npm install
+```
+
+**3. 配置环境变量**
+将根目录下的 `.env.example` 复制为 `.env`，并填入你的服务秘钥：
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+DATABASE_URL=postgresql://用户名:密码@你的Neon数据库地址
+ZHIPU_API_KEY=你的智谱API_KEY（作为系统兜底额度）
+```
+
+**4. 初始化数据库**
+```bash
+npx prisma db push
+npx prisma generate
+```
+
+**5. 启动开发服务器**
+```bash
+npm run dev
+```
+打开浏览器访问 `http://localhost:3000`，你的第二大脑已就绪！🧠
+
+## 🤝 参与贡献 (Contributing)
+
+**热烈欢迎大家来砸 PR 和提 Issue！🎉**
+
+无论你是发现了样式错位、遇到了难以忍受的 Bug，还是想到了某个极其炫酷的脑洞功能（比如：支持解析 PDF 文档、增加暗黑模式 Dark Mode、接入本地的 Ollama 模型等等），都非常欢迎你参与到建设中来！
+
+**如何发起 Pull Request：**
+1. Fork 本仓库。
+2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)。
+3. 提交你的代码 (`git commit -m 'feat: Add some AmazingFeature'`)。
+4. 推送到分支 (`git push origin feature/AmazingFeature`)。
+5. 在 GitHub 上开启一个 Pull Request。
+
+所有的代码审查和合并我都将亲自处理。你的每一行代码，都有可能帮助全世界的开发者更好地对抗“认知负荷”！
+
+## 📄 许可证 (License)
+
+本项目基于 [MIT License](LICENSE) 协议开源。你可以自由地学习、修改和用于个人和商业用途。请遵守协议条款，并遵守开源项目。
