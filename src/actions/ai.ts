@@ -20,7 +20,7 @@ async function fetchAIResponse(messages: any[]) {
   
   // ================= 核心安全修复 =================
   // 如果用户配了，就把数据库里的加密乱码解密出来再用；没配就用系统 .env 里的白嫖额度
-  const apiKey = isCustom ? decryptApiKey(userConfig.apiKey) : process.env.ZHIPU_API_KEY;
+  const apiKey = isCustom ? decryptApiKey(userConfig.apiKey || '') : process.env.ZHIPU_API_KEY;
   // ===============================================
 
   // 完美兼容所有类 OpenAI 格式的模型接口（DeepSeek, 通义, OpenAI 等）
