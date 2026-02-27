@@ -3,6 +3,7 @@
 
 import { prisma } from '../lib/prisma'
 import { auth } from "@clerk/nextjs/server"
+import { decryptApiKey } from '../lib/encryption' // <--- 1. 新增：引入解密引擎
 
 /**
  * 核心网关：智能路由大模型请求 (支持 BYOK 自定义模型)
@@ -17,8 +18,11 @@ async function fetchAIResponse(messages: any[]) {
   // 2. 架构师级 Fallback（兜底）策略
   const isCustom = userConfig && userConfig.apiKey;
   
-  // 如果用户配了就用用户的，没配就用系统 .env 里的白嫖额度
-  const apiKey = isCustom ? userConfig.apiKey : process.env.ZHIPU_API_KEY;
+  // ================= 核心安全修复 =================
+  // 如果用户配了，就把数据库里的加密乱码解密出来再用；没配就用系统 .env 里的白嫖额度
+  const apiKey = isCustom ? decryptApiKey(userConfig.apiKey) : process.env.ZHIPU_API_KEY;
+  // ===============================================
+
   // 完美兼容所有类 OpenAI 格式的模型接口（DeepSeek, 通义, OpenAI 等）
   const baseURL = (isCustom && userConfig.baseURL) ? userConfig.baseURL : 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
   const modelName = (isCustom && userConfig.modelName) ? userConfig.modelName : 'glm-4-flash';
@@ -32,7 +36,7 @@ async function fetchAIResponse(messages: any[]) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'Authorization': `Bearer ${apiKey}` // 这里传出去的将是解密还原后的真正明文 Key
     },
     body: JSON.stringify({
       model: modelName,

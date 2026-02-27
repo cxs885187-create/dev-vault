@@ -12,6 +12,7 @@ import { EditableProjectTitle } from '@/components/EditableProjectTitle'
 import { SettingsModal } from '@/components/SettingsModal'
 import Link from 'next/link'
 import { WorkflowDiagnostic } from '@/components/WorkflowDiagnostic' // <--- 加上这一行
+import { decryptApiKey } from '@/lib/encryption'
 
 export default async function Home(props: { searchParams: Promise<{ q?: string; tab?: string }> }) {
   const { userId } = await auth();
@@ -109,7 +110,7 @@ export default async function Home(props: { searchParams: Promise<{ q?: string; 
           <div className="flex items-center gap-4">
             <SettingsModal 
               initialBaseURL={userConfig?.baseURL || ''} 
-              initialApiKey={userConfig?.apiKey || ''} 
+              initialApiKey={userConfig?.apiKey ? decryptApiKey(userConfig.apiKey) : ''} 
               initialModelName={userConfig?.modelName || ''} 
             />
             <UserButton />

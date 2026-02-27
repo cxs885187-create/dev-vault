@@ -4,20 +4,23 @@
 import { prisma } from '../lib/prisma'
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from 'next/cache'
+import { encryptApiKey } from '../lib/encryption' // <--- 1. 引入加密引擎
 
 export async function saveUserConfig(baseURL: string, apiKey: string, modelName: string) {
   const { userId } = await auth();
   if (!userId) throw new Error("未授权访问");
 
   try {
-    // 架构师最爱的 upsert 操作：有则更新，无则创建！
+    // 2. 核心防御：只有当用户填了 key 的时候，才进行加密！
+    const safeApiKey = apiKey ? encryptApiKey(apiKey) : '';
+
     await prisma.userConfig.upsert({
       where: { userId },
-      update: { baseURL, apiKey, modelName },
-      create: { userId, baseURL, apiKey, modelName }
+      update: { baseURL, apiKey: safeApiKey, modelName },
+      create: { userId, baseURL, apiKey: safeApiKey, modelName }
     });
     
-    revalidatePath('/'); // 刷新当前页面状态
+    revalidatePath('/'); 
     return { success: true };
   } catch (error) {
     console.error("保存配置失败:", error);
