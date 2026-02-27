@@ -1,0 +1,68 @@
+// prisma/schema.prisma
+
+// 1. 生成器配置（不要删）
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. 数据库连接配置（不要删）
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================
+// 领域模型 2.0 (多租户架构)
+// ==========================
+
+model Term {
+  id          String   @id @default(cuid())
+  userId      String   // 新增：归属用户ID (Clerk User ID)
+  name        String   
+  description String?  
+  sourceUrl   String?  
+  aiSummary   String?  
+  tags        String   @default("") 
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 架构师优化：同一个用户不能保存重复的名词
+  @@unique([name, userId]) 
+}
+
+model Snippet {
+  id          String   @id @default(cuid())
+  userId      String   // 新增：归属用户ID
+  title       String   
+  code        String   
+  language    String   @default("typescript")
+  explanation String?  
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProjectAnalysis {
+  id                String   @id @default(cuid())
+  userId            String   // 新增：归属用户ID
+  projectName       String   
+  directoryTree     String   
+  mermaidCode       String?  
+  workflowNotes     String?  
+  aiWorkflowSummary String?  
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// 用户个人的大模型配置表
+model UserConfig {
+  userId      String   @id      // 直接用 Clerk 的 userId 作为主键
+  provider    String   @default("zhipu") // 比如 zhipu, deepseek, openai
+  apiKey      String?  // 用户的专属 Key
+  baseURL     String?  // 接口地址（比如 https://api.deepseek.com/v1）
+  modelName   String?  // 模型名称（比如 deepseek-coder）
+  
+  updatedAt   DateTime @updatedAt
+}
