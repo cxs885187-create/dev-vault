@@ -11,6 +11,7 @@ import { EditableSnippetTitle } from '@/components/EditableSnippetTitle'
 import { EditableProjectTitle } from '@/components/EditableProjectTitle'
 import { SettingsModal } from '@/components/SettingsModal'
 import Link from 'next/link'
+import { WorkflowDiagnostic } from '@/components/WorkflowDiagnostic' // <--- 加上这一行
 
 export default async function Home(props: { searchParams: Promise<{ q?: string; tab?: string }> }) {
   const { userId } = await auth();
@@ -213,6 +214,31 @@ export default async function Home(props: { searchParams: Promise<{ q?: string; 
                           <summary className="cursor-pointer font-semibold hover:text-purple-600">查看原始纯净目录树</summary>
                           <pre className="mt-4 text-xs text-gray-800 overflow-auto max-h-64 font-mono leading-relaxed">{project.directoryTree}</pre>
                         </details>
+                        {projects.map((project) => (
+                      <div key={project.id} className="bg-white p-6 rounded-xl shadow-sm border border-purple-100 hover:shadow-md transition-shadow">
+                        <EditableProjectTitle projectId={project.id} initialName={project.projectName} />
+                        
+                        {project.mermaidCode && (
+                          <div className="mb-4 bg-gray-50 rounded-lg border border-gray-100 p-2">
+                            <MermaidRenderer chartCode={project.mermaidCode} />
+                          </div>
+                        )}
+                        
+                        {/* 注意这里我给 details 加了一个 mb-4 的下边距，让它和下面的复盘组件隔开点 */}
+                        <details className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md border border-gray-200 mb-4">
+                          <summary className="cursor-pointer font-semibold hover:text-purple-600">查看原始纯净目录树</summary>
+                          <pre className="mt-4 text-xs text-gray-800 overflow-auto max-h-64 font-mono leading-relaxed">{project.directoryTree}</pre>
+                        </details>
+
+                        {/* ================= 修复：找回失踪的首席架构师诊断组件 ================= */}
+                        <WorkflowDiagnostic 
+                          projectId={project.id} 
+                          existingNotes={project.workflowNotes} 
+                          existingSummary={project.aiWorkflowSummary} 
+                        />
+
+                      </div>
+                    ))}
                       </div>
                     ))}
                   </div>
