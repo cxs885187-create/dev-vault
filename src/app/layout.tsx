@@ -1,19 +1,6 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata } from 'next'
-import { JetBrains_Mono, Manrope } from 'next/font/google'
 import './globals.css'
-
-const manrope = Manrope({
-  variable: '--font-sans',
-  subsets: ['latin'],
-  display: 'swap',
-})
-
-const jetBrainsMono = JetBrains_Mono({
-  variable: '--font-mono',
-  subsets: ['latin'],
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: 'DevVault | 开发者第二大脑',
@@ -28,7 +15,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="zh-CN">
-        <body className={`${manrope.variable} ${jetBrainsMono.variable}`}>{children}</body>
+        <body>{children}</body>
       </html>
     </ClerkProvider>
   )
