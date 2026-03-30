@@ -837,7 +837,7 @@ export function WorkspaceClient({ snapshot, initialTab, initialQuery }: Props) {
 
             {showHome ? (
               <>
-                <section className="grid gap-6 xl:grid-cols-[1.15fr_1fr]">
+                <section className="grid items-start gap-6 2xl:grid-cols-[1.15fr_1fr]">
                   <div className="space-y-6">
                     <section id="term-quick-form" className="app-panel p-6">
                       <SectionHeading
@@ -923,7 +923,7 @@ export function WorkspaceClient({ snapshot, initialTab, initialQuery }: Props) {
                   </div>
                 </section>
 
-                <section className="grid gap-6 xl:grid-cols-2">
+                <section className="grid items-start gap-6 2xl:grid-cols-2">
                   <section className="app-panel p-6">
                     <SectionHeading title="近期概念" description="最近沉淀的术语和 AI 解释。" badge={`${terms.length} 条`} />
                     <div className="mt-5 space-y-4">
@@ -965,7 +965,7 @@ export function WorkspaceClient({ snapshot, initialTab, initialQuery }: Props) {
                   </section>
                 </section>
 
-                <section className="grid gap-6 xl:grid-cols-2">
+                <section className="grid items-start gap-6 2xl:grid-cols-2">
                   <section className="app-panel p-6">
                     <SectionHeading title="近期代码片段" description="最近导入或整理的关键代码。" badge={`${snippets.length} 条`} />
                     <div className="mt-5 space-y-4">

@@ -42,22 +42,22 @@ export function SearchBar() {
         {query ? <span className="tag">已筛选</span> : null}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <input
           type="text"
           name="q"
           defaultValue={query}
           placeholder="搜索概念、代码片段、项目或笔记"
-          className="app-input min-w-0 flex-1 text-sm"
+          className="app-input min-w-0 flex-1 text-sm md:text-base"
           aria-label="全局搜索"
         />
 
         {query ? (
-          <button type="button" onClick={() => submitSearch('')} className="secondary-button sm:flex-shrink-0">
+          <button type="button" onClick={() => submitSearch('')} className="secondary-button w-full md:w-auto md:flex-shrink-0">
             清除
           </button>
         ) : (
-          <button type="submit" disabled={isPending} className="primary-button sm:flex-shrink-0">
+          <button type="submit" disabled={isPending} className="primary-button w-full md:w-auto md:flex-shrink-0">
             {isPending ? '搜索中' : '搜索'}
           </button>
         )}
