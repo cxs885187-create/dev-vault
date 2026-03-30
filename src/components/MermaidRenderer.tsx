@@ -1,14 +1,13 @@
-// src/components/MermaidRenderer.tsx
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useId, useState } from 'react'
 import mermaid from 'mermaid'
 
 mermaid.initialize({
   startOnLoad: false,
-  theme: 'default',
+  theme: 'neutral',
   securityLevel: 'loose',
-  fontFamily: 'inherit'
+  fontFamily: 'var(--font-sans)',
 })
 
 interface MermaidRendererProps {
@@ -16,52 +15,81 @@ interface MermaidRendererProps {
 }
 
 export function MermaidRenderer({ chartCode }: MermaidRendererProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const baseId = useId().replace(/:/g, '')
+  const [svg, setSvg] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (containerRef.current && chartCode) {
-      const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`
-      
-      // 架构防御：使用完整的 Promise 链捕获异步渲染错误
-      mermaid.render(id, chartCode)
-        .then((result) => {
-          if (containerRef.current) {
-            containerRef.current.innerHTML = result.svg
-          }
-        })
-        .catch((error) => {
-          console.error('Mermaid 渲染失败:', error)
-          // 如果 AI 写的代码画不出图，我们就在页面上优雅地把源码打印出来，不让页面崩溃
-          if (containerRef.current) {
-            containerRef.current.innerHTML = `
-              <div class="p-4 bg-red-50 text-red-600 rounded-md border border-red-200">
-                <p class="font-bold mb-2">⚠️ AI 生成的图表语法有误，无法渲染成图片。原始代码如下：</p>
-                <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-auto max-h-64">${chartCode}</pre>
-              </div>
-            `
-          }
-        })
-    }
-  }, [chartCode])
+    let isActive = true
 
-  if (!chartCode) return null
+    const renderChart = async () => {
+      setSvg(null)
+      setError(null)
+
+      try {
+        const result = await mermaid.render(`mermaid-${baseId}-${Date.now()}`, chartCode)
+
+        if (isActive) {
+          setSvg(result.svg)
+        }
+      } catch (renderError) {
+        console.error('Mermaid 渲染失败:', renderError)
+
+        if (isActive) {
+          setError('Mermaid 结构图渲染失败，已保留原始图表代码供排查。')
+        }
+      }
+    }
+
+    if (chartCode) {
+      void renderChart()
+    }
+
+    return () => {
+      isActive = false
+    }
+  }, [baseId, chartCode])
+
+  if (!chartCode) {
+    return null
+  }
 
   return (
-    // 1. 去掉之前的 flex 居中，改为 w-full 占满全宽，并允许横向滚动
-    <div className="w-full overflow-x-auto p-6 bg-white rounded-xl border border-gray-200 shadow-inner">
-      
-      {/* 2. 架构级 UI 修复：强制穿透并放大 Mermaid 生成的动态 SVG */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        .mermaid-container svg {
-          width: 100% !important;
-          min-width: 800px !important;  /* 保证图表最小宽度，字不会挤在一起 */
-          height: auto !important;
-          min-height: 500px !important; /* 保证图表最小高度，彻底拉开 */
+    <div className="overflow-hidden rounded-[28px] border border-stone-200/70 bg-white/80">
+      <div className="surface-divider flex items-center justify-between px-5 py-4 first:border-t-0">
+        <div>
+          <p className="section-kicker">Diagram</p>
+          <p className="mt-2 text-sm font-medium text-stone-700">项目结构图</p>
+        </div>
+        <span className="tag">Mermaid</span>
+      </div>
+
+      {svg ? (
+        <div className="overflow-x-auto p-6">
+          <div className="mermaid-output min-w-[720px]" dangerouslySetInnerHTML={{ __html: svg }} />
+        </div>
+      ) : null}
+
+      {!svg && !error ? <div className="px-6 py-8 text-sm text-stone-500">正在渲染结构图...</div> : null}
+
+      {error ? (
+        <div className="space-y-3 px-6 py-6">
+          <div className="rounded-3xl border border-rose-200 bg-[var(--rose-soft)] px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+          <pre className="code-surface overflow-auto rounded-[24px] p-5 text-xs leading-6">
+            <code>{chartCode}</code>
+          </pre>
+        </div>
+      ) : null}
+
+      <style jsx>{`
+        .mermaid-output :global(svg) {
+          width: 100%;
+          height: auto;
+          min-height: 420px;
         }
-      `}} />
-      
-      {/* 图表将被渲染在这个 div 里 */}
-      <div ref={containerRef} className="mermaid-container mx-auto" />
+      `}</style>
     </div>
   )
 }

@@ -1,7 +1,7 @@
-// src/components/EditableSnippetTitle.tsx
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { renameSnippet } from '@/actions/snippet'
 
 interface Props {
@@ -10,65 +10,88 @@ interface Props {
 }
 
 export function EditableSnippetTitle({ snippetId, initialTitle }: Props) {
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState(initialTitle)
   const [isSaving, setIsSaving] = useState(false)
+  const [feedback, setFeedback] = useState<string | null>(null)
 
-  const handleSave = async () => {
-    // 如果没改或者清空了，就恢复原状
-    if (title.trim() === initialTitle || !title.trim()) {
-      setTitle(initialTitle)
-      setIsEditing(false)
+  useEffect(() => {
+    setTitle(initialTitle)
+  }, [initialTitle])
+
+  const handleCancel = () => {
+    setTitle(initialTitle)
+    setFeedback(null)
+    setIsEditing(false)
+  }
+
+  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const nextTitle = title.trim()
+
+    if (!nextTitle) {
+      setFeedback('标题不能为空。')
+      return
+    }
+
+    if (nextTitle === initialTitle) {
+      handleCancel()
       return
     }
 
     setIsSaving(true)
-    const result = await renameSnippet(snippetId, title)
-    
-    if (result?.error) {
-      alert(result.error)
-      setTitle(initialTitle) // 失败则回滚
-    }
-    
+    setFeedback(null)
+
+    const result = await renameSnippet(snippetId, nextTitle)
+
     setIsSaving(false)
+
+    if (result?.error) {
+      setFeedback(result.error)
+      return
+    }
+
+    router.refresh()
     setIsEditing(false)
   }
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-2 mb-2">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={handleSave} // 鼠标点到外面自动保存
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSave() // 回车保存
-            if (e.key === 'Escape') {
-              setTitle(initialTitle) // Esc 取消
-              setIsEditing(false)
-            }
-          }}
-          autoFocus
-          disabled={isSaving}
-          className="px-2 py-1 border-b-2 border-blue-500 bg-blue-50 focus:outline-none text-lg font-bold text-gray-800 w-1/2 rounded-t-sm"
-        />
-        {isSaving && <span className="text-xs text-blue-500 animate-pulse">保存中...</span>}
-      </div>
+      <form onSubmit={handleSave} className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            type="text"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            autoFocus
+            disabled={isSaving}
+            className="app-input flex-1 text-lg font-semibold"
+          />
+          <div className="flex gap-2">
+            <button type="button" onClick={handleCancel} className="secondary-button" disabled={isSaving}>
+              取消
+            </button>
+            <button type="submit" className="primary-button" disabled={isSaving}>
+              {isSaving ? '保存中' : '保存'}
+            </button>
+          </div>
+        </div>
+        {feedback ? <p className="text-sm text-rose-700">{feedback}</p> : null}
+      </form>
     )
   }
 
   return (
-    // group 魔法：只有鼠标悬浮在这一行时，铅笔才会显示
-    <h3 className="text-lg font-bold text-gray-800 mb-2 border-l-4 border-blue-500 pl-2 group flex items-center gap-2">
-      {title}
-      <button
-        onClick={() => setIsEditing(true)}
-        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-600 transition-opacity text-sm p-1 rounded hover:bg-gray-100"
-        title="重命名这段代码"
-      >
-        ✏️
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h3 className="text-2xl font-semibold text-[var(--ink)]">{title}</h3>
+        <p className="mt-2 text-sm text-stone-500">保留这段代码的上下文说明，方便下次快速回忆。</p>
+      </div>
+      <button type="button" onClick={() => setIsEditing(true)} className="secondary-button">
+        重命名
       </button>
-    </h3>
+    </div>
   )
 }

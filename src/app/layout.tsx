@@ -1,41 +1,37 @@
-// 1. 新增：引入 ClerkProvider
-import { ClerkProvider } from '@clerk/nextjs' 
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { ClerkProvider } from '@clerk/nextjs'
+import type { Metadata } from 'next'
+import { JetBrains_Mono, Manrope } from 'next/font/google'
+import './globals.css'
 
-// Next.js 默认的字体配置（保留它们）
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const manrope = Manrope({
+  variable: '--font-sans',
+  subsets: ['latin'],
+  display: 'swap',
+})
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const jetBrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
+  subsets: ['latin'],
+  display: 'swap',
+})
 
-// 顺便把你的网页标题改得专业一点
 export const metadata: Metadata = {
-  title: "DevVault | 开发者第二大脑", 
-  description: "卸载认知负荷，AI 增强的代码架构与知识管理系统",
-};
+  title: 'DevVault | 开发者第二大脑',
+  description: '用更清晰的界面整理概念、代码片段和项目结构，让 AI 成为你的开发知识工作台。',
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    // 2. 新增：用 ClerkProvider 包裹整个 html
     <ClerkProvider>
       <html lang="zh-CN">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
+        <body className={`${manrope.variable} ${jetBrainsMono.variable}`}>
           {children}
         </body>
       </html>
     </ClerkProvider>
-  );
+  )
 }

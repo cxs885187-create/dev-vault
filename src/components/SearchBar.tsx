@@ -1,56 +1,75 @@
-// src/components/SearchBar.tsx
 'use client'
 
+import { useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
 
 export function SearchBar() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [query, setQuery] = useState(searchParams.get('q') || '')
+  const [isPending, startTransition] = useTransition()
+  const query = searchParams.get('q') ?? ''
 
-  // 当 URL 变化时同步输入框状态
-  useEffect(() => {
-    setQuery(searchParams.get('q') || '')
-  }, [searchParams])
+  const buildTarget = (nextQuery: string) => {
+    const params = new URLSearchParams(searchParams.toString())
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (query.trim()) {
-      router.push(`/?q=${encodeURIComponent(query.trim())}`)
+    if (nextQuery) {
+      params.set('q', nextQuery)
     } else {
-      router.push('/') // 清除搜索，回首页
+      params.delete('q')
     }
+
+    const nextUrl = params.toString()
+    return nextUrl ? `/?${nextUrl}` : '/'
+  }
+
+  const submitSearch = (nextQuery: string) => {
+    startTransition(() => {
+      router.push(buildTarget(nextQuery))
+    })
+  }
+
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const nextQuery = (formData.get('q') as string | null)?.trim() ?? ''
+    submitSearch(nextQuery)
   }
 
   return (
-    <form onSubmit={handleSearch} className="flex flex-col gap-2">
+    <form key={query} onSubmit={handleSearch} className="space-y-3">
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <span className="text-gray-400 text-sm">🔍</span>
-        </div>
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-stone-400">
+          搜索
+        </span>
         <input
           type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="全库搜索..."
-          className="w-full pl-9 pr-8 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
+          name="q"
+          defaultValue={query}
+          placeholder="按概念、代码说明或项目名全文检索"
+          className="app-input pl-[4.5rem] pr-24 text-sm"
+          aria-label="全局搜索"
         />
-        {/* 小小的清除按钮 X */}
-        {query && (
+        {query ? (
           <button
             type="button"
-            onClick={() => {
-              setQuery('')
-              router.push('/')
-            }}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+            onClick={() => submitSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 text-xs font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-800"
           >
-            ✕
+            清除
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={isPending}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-[var(--ink)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#101826] disabled:opacity-60"
+          >
+            {isPending ? '检索中' : '回车'}
           </button>
         )}
       </div>
-      {/* 隐藏了原来那个巨大的“全库检索”按钮，改为敲击回车直接搜索，符合侧边栏习惯 */}
+      <p className="text-xs leading-5 text-stone-500">
+        搜索会跨概念库、代码片段库和项目结构库一起执行。
+      </p>
     </form>
   )
 }

@@ -1,125 +1,173 @@
-// src/components/SettingsModal.tsx
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { saveUserConfig } from '@/actions/config'
 
 interface Props {
-  initialBaseURL: string;
-  initialApiKey: string;
-  initialModelName: string;
+  initialBaseURL: string
+  initialApiKey: string
+  initialModelName: string
 }
 
 export function SettingsModal({ initialBaseURL, initialApiKey, initialModelName }: Props) {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [baseURL, setBaseURL] = useState(initialBaseURL)
   const [apiKey, setApiKey] = useState(initialApiKey)
   const [modelName, setModelName] = useState(initialModelName)
   const [isSaving, setIsSaving] = useState(false)
+  const [feedback, setFeedback] = useState<string | null>(null)
 
-  // 优雅的 UX 还原机制：如果用户没点保存而是点了取消，我们要把输入框恢复成初始值
-  const handleClose = () => {
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isOpen])
+
+  const resetForm = () => {
     setBaseURL(initialBaseURL)
     setApiKey(initialApiKey)
     setModelName(initialModelName)
+    setFeedback(null)
+  }
+
+  const handleClose = () => {
+    resetForm()
     setIsOpen(false)
   }
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     setIsSaving(true)
-    const result = await saveUserConfig(baseURL, apiKey, modelName)
+    setFeedback(null)
+
+    const result = await saveUserConfig(baseURL.trim(), apiKey.trim(), modelName.trim())
+
     setIsSaving(false)
-    
+
     if (result.success) {
-      // 架构师的交互细节：判断用户是“配了新 Key”还是“清空了 Key”
-      if (!baseURL && !apiKey && !modelName) {
-        alert('🔄 已清除自定义配置，系统已恢复使用默认的免费模型。')
-      } else {
-        alert('✅ 配置保存成功！从现在起系统将使用你的专属模型。')
-      }
+      router.refresh()
       setIsOpen(false)
-    } else {
-      alert('❌ 保存失败，请重试')
+      return
     }
+
+    setFeedback(result.error ?? '保存失败，请稍后重试。')
   }
+
+  const hasCustomConfig = Boolean(initialBaseURL || initialApiKey || initialModelName)
 
   return (
     <>
-      <button 
-        onClick={() => setIsOpen(true)} 
-        className="p-2 text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center w-8 h-8" 
-        title="模型设置 (BYOK)"
+      <button
+        type="button"
+        onClick={() => {
+          setBaseURL(initialBaseURL)
+          setApiKey(initialApiKey)
+          setModelName(initialModelName)
+          setFeedback(null)
+          setIsOpen(true)
+        }}
+        className="secondary-button"
       >
-        ⚙️
+        <span className="h-2.5 w-2.5 rounded-full bg-[var(--teal)]" />
+        模型设置
       </button>
 
-      {isOpen && (
-        // 1. 新增：onMouseDown={handleClose}，点击黑色半透明背景即可关闭弹窗
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
-          onMouseDown={handleClose} 
+      {isOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm"
+          onMouseDown={handleClose}
         >
-          {/* 2. 新增：e.stopPropagation() 阻止事件冒泡，防止点击白板区域也被关闭 */}
-          <div 
-            className="bg-white p-6 rounded-2xl shadow-xl w-[400px] relative animate-in fade-in zoom-in duration-200"
-            onMouseDown={(e) => e.stopPropagation()}
+          <div
+            className="app-panel w-full max-w-2xl p-6 sm:p-8"
+            onMouseDown={(event) => event.stopPropagation()}
           >
-            <button onClick={handleClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-xl font-bold p-1">
-              ✕
-            </button>
-            <h2 className="text-xl font-bold mb-2 flex items-center gap-2">⚙️ 专属 AI 配置</h2>
-            <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-              填入你自己的大模型 Key。<strong>若将下方三个框全部清空并保存，即可恢复使用系统的默认免费额度。</strong>
-            </p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="section-kicker">BYOK</p>
+                <h2 className="mt-3 text-3xl font-semibold text-[var(--ink)]">配置你的专属 AI 模型</h2>
+                <p className="mt-4 max-w-xl text-sm leading-7 text-stone-600">
+                  填入自定义 Base URL、API Key 和模型名后，系统会优先使用你的配置。留空并保存则恢复为系统默认模型。
+                </p>
+              </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">接口地址 (Base URL)</label>
-                <input 
-                  type="text" value={baseURL} onChange={e => setBaseURL(e.target.value)} 
-                  placeholder="如: https://api.deepseek.com/v1/chat/completions" 
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+              <button
+                type="button"
+                onClick={handleClose}
+                className="rounded-full p-3 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
+                aria-label="关闭模型设置"
+              >
+                关闭
+              </button>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              <span className="tag">{hasCustomConfig ? '当前已配置专属模型' : '当前使用系统默认模型'}</span>
+              <span className="tag">OpenAI 格式兼容</span>
+            </div>
+
+            <form onSubmit={handleSave} className="mt-8 space-y-5">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-stone-700">Base URL</span>
+                <input
+                  type="text"
+                  value={baseURL}
+                  onChange={(event) => setBaseURL(event.target.value)}
+                  placeholder="例如 https://api.openai.com/v1"
+                  className="app-input text-sm"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">API 密钥 (API Key)</label>
-                <input 
-                  type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} 
-                  placeholder="sk-..." 
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-stone-700">API Key</span>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(event) => setApiKey(event.target.value)}
+                  placeholder="sk-..."
+                  className="app-input text-sm"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">模型名称 (Model Name)</label>
-                <input 
-                  type="text" value={modelName} onChange={e => setModelName(e.target.value)} 
-                  placeholder="如: deepseek-chat" 
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-stone-700">Model Name</span>
+                <input
+                  type="text"
+                  value={modelName}
+                  onChange={(event) => setModelName(event.target.value)}
+                  placeholder="例如 gpt-4.1-mini 或 deepseek-chat"
+                  className="app-input text-sm"
                 />
-              </div>
-              
-              {/* 3. 新增：底部双按钮设计 (取消 vs 保存) */}
-              <div className="flex gap-3 pt-4">
-                <button 
-                  type="button" 
-                  onClick={handleClose}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                >
+              </label>
+
+              {feedback ? (
+                <div className="rounded-3xl border border-rose-200 bg-[var(--rose-soft)] px-4 py-3 text-sm text-rose-700">
+                  {feedback}
+                </div>
+              ) : null}
+
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
+                <button type="button" onClick={handleClose} className="secondary-button">
                   取消
                 </button>
-                <button 
-                  type="submit" disabled={isSaving} 
-                  className="flex-1 bg-gray-900 text-white py-2.5 rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:bg-gray-400"
-                >
-                  {isSaving ? '保存中...' : '保存并生效'}
+                <button type="submit" disabled={isSaving} className="primary-button sm:min-w-36">
+                  {isSaving ? '保存中' : '保存配置'}
                 </button>
               </div>
-
             </form>
           </div>
         </div>
-      )}
+      ) : null}
     </>
   )
 }

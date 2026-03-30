@@ -1,72 +1,105 @@
-// src/components/WorkflowDiagnostic.tsx
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { diagnoseWorkflow } from '@/actions/project'
 
 interface Props {
-  projectId: string;
-  existingNotes: string | null;
-  existingSummary: string | null;
+  projectId: string
+  existingNotes: string | null
+  existingSummary: string | null
 }
 
 export function WorkflowDiagnostic({ projectId, existingNotes, existingSummary }: Props) {
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [feedback, setFeedback] = useState<string | null>(null)
 
-  // 架构务实主义：直接使用原生 form 的 onSubmit 拦截，极致轻量
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const notes = formData.get('notes') as string
-    if (!notes) return
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const formData = new FormData(event.currentTarget)
+    const notes = (formData.get('notes') as string | null)?.trim()
+
+    if (!notes) {
+      setFeedback('请先补充这次开发流程的关键步骤。')
+      return
+    }
 
     setIsSubmitting(true)
-    await diagnoseWorkflow(projectId, notes)
+    setFeedback(null)
+
+    const result = await diagnoseWorkflow(projectId, notes)
+
     setIsSubmitting(false)
+
+    if (result?.error) {
+      setFeedback(result.error)
+      return
+    }
+
+    event.currentTarget.reset()
+    router.refresh()
   }
 
-  // 如果已经有 AI 的诊断报告了，就直接优雅地展示出来
   if (existingSummary) {
     return (
-      <div className="mt-6 border-t border-purple-100 pt-4">
-        <h4 className="text-lg font-bold text-purple-800 mb-2">🧑‍💻 我的工作流复盘与 AI 诊断</h4>
-        <div className="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200 text-sm text-gray-600">
-          <p className="font-semibold mb-1">我的原始记录：</p>
-          {existingNotes}
-        </div>
-        <div className="bg-purple-50 p-5 rounded-xl border border-purple-200">
-          <div className="prose prose-sm text-purple-900 whitespace-pre-wrap max-w-none">
-            {existingSummary}
+      <section className="mt-6 rounded-[28px] border border-stone-200/70 bg-stone-50/90 p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="section-kicker">Workflow Review</p>
+            <h4 className="mt-3 text-xl font-semibold text-[var(--ink)]">开发流程复盘与建议</h4>
           </div>
+          <span className="tag">已生成诊断</span>
         </div>
-      </div>
+
+        {existingNotes ? (
+          <div className="mt-5 rounded-[24px] border border-stone-200/70 bg-white/85 p-4">
+            <p className="text-sm font-semibold text-stone-800">你的原始记录</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-stone-600">{existingNotes}</p>
+          </div>
+        ) : null}
+
+        <div className="mt-5 whitespace-pre-wrap text-sm leading-7 text-stone-700">{existingSummary}</div>
+      </section>
     )
   }
 
-  // 如果还没有报告，就展示一个输入框让用户“倾诉”
   return (
-    <div className="mt-6 border-t border-gray-100 pt-6">
-      <h4 className="text-md font-semibold text-gray-700 mb-2">🤔 专家级工作流复盘</h4>
-      <p className="text-xs text-gray-500 mb-3">
-        用口语描述你是怎么开发这个项目的（例如：“我先用 create-next-app 建了项目，然后配了 Prisma，最后写了两个组件”）。AI 将结合上方的架构图为你做专业诊断。
+    <section className="mt-6 rounded-[28px] border border-stone-200/70 bg-stone-50/90 p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="section-kicker">Workflow Review</p>
+          <h4 className="mt-3 text-xl font-semibold text-[var(--ink)]">补充开发流程，让 AI 给出复盘建议</h4>
+        </div>
+        <span className="tag">Staff 视角</span>
+      </div>
+
+      <p className="mt-4 text-sm leading-7 text-stone-600">
+        用自然语言描述你是如何搭建这个项目的，比如先搭框架、再接数据库、最后补 UI。系统会结合目录结构给出更有工程感的诊断建议。
       </p>
-      
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <textarea 
+
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <textarea
           name="notes"
-          rows={3}
-          placeholder="尽情倾诉你的开发过程..."
+          rows={5}
           required
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-sm resize-none"
-        ></textarea>
-        <button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="self-end bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:bg-purple-300 text-sm font-medium"
-        >
-          {isSubmitting ? '🧠 首席架构师正在深度诊断中...' : '提交并生成诊断报告'}
-        </button>
+          placeholder="例如：我先用 create-next-app 起项目，再接入 Prisma 和 Clerk，最后补齐页面组件和搜索。"
+          className="app-input min-h-36 resize-y text-sm leading-7"
+        />
+
+        {feedback ? (
+          <div className="rounded-3xl border border-rose-200 bg-[var(--rose-soft)] px-4 py-3 text-sm text-rose-700">
+            {feedback}
+          </div>
+        ) : null}
+
+        <div className="flex justify-end">
+          <button type="submit" disabled={isSubmitting} className="primary-button">
+            {isSubmitting ? '正在生成诊断' : '生成工作流诊断'}
+          </button>
+        </div>
       </form>
-    </div>
+    </section>
   )
 }

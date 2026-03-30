@@ -8,7 +8,12 @@ import { decryptApiKey } from '../lib/encryption' // <--- 1. 新增：引入解�
 /**
  * 核心网关：智能路由大模型请求 (支持 BYOK 自定义模型)
  */
-async function fetchAIResponse(messages: any[]) {
+type AIMessage = {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
+async function fetchAIResponse(messages: AIMessage[]) {
   const { userId } = await auth();
   if (!userId) throw new Error("未授权访问");
 
@@ -57,7 +62,7 @@ async function fetchAIResponse(messages: any[]) {
  */
 export async function generateTermSummary(query: string): Promise<string> {
   try {
-    const messages = [
+    const messages: AIMessage[] = [
       { 
         role: "system", 
         content: "你是一个资深的研发架构师。请用通俗易懂的“人话”解释用户提供的技术名词或代码依赖包。你需要说明：1. 它是做什么的；2. 解决了什么痛点；3. 一个极其简单的应用场景。保持简短，使用 Markdown 格式。" 
@@ -81,7 +86,7 @@ export async function generateTermSummary(query: string): Promise<string> {
  */
 export async function generateCodeExplanation(code: string): Promise<string> {
   try {
-    const messages = [
+    const messages: AIMessage[] = [
       { 
         role: "system", 
         content: "你是一个资深的研发架构师。用户会发给你一段代码。请你：1. 用一句话总结这段代码的核心功能；2. 解释里面用到了哪些不常见的依赖包或内置 API（如果都很常见则跳过）；3. 指出这段代码的一个潜在可优化点。使用 Markdown 格式;4.如果有经典算法，请解释运用了哪些算法思想，同时标注出现在代码中的哪些地方。" 
