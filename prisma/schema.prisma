@@ -1,68 +1,99 @@
-// prisma/schema.prisma
-
-// 1. 生成器配置（不要删）
 generator client {
   provider = "prisma-client-js"
 }
 
-// 2. 数据库连接配置（不要删）
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// ==========================
-// 领域模型 2.0 (多租户架构)
-// ==========================
+enum NoteLinkTargetType {
+  NOTE
+  TERM
+  SNIPPET
+  PROJECT
+  UNKNOWN
+}
 
 model Term {
   id          String   @id @default(cuid())
-  userId      String   // 新增：归属用户ID (Clerk User ID)
-  name        String   
-  description String?  
-  sourceUrl   String?  
-  aiSummary   String?  
-  tags        String   @default("") 
-  
+  userId      String
+  name        String
+  description String?
+  sourceUrl   String?
+  aiSummary   String?
+  tags        String   @default("")
+  deletedAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // 架构师优化：同一个用户不能保存重复的名词
-  @@unique([name, userId]) 
+  @@unique([name, userId])
+  @@index([userId, deletedAt, createdAt])
 }
 
 model Snippet {
   id          String   @id @default(cuid())
-  userId      String   // 新增：归属用户ID
-  title       String   
-  code        String   
+  userId      String
+  title       String
+  code        String
   language    String   @default("typescript")
-  explanation String?  
-  
+  explanation String?
+  deletedAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([userId, deletedAt, createdAt])
 }
 
 model ProjectAnalysis {
   id                String   @id @default(cuid())
-  userId            String   // 新增：归属用户ID
-  projectName       String   
-  directoryTree     String   
-  mermaidCode       String?  
-  workflowNotes     String?  
-  aiWorkflowSummary String?  
-  
+  userId            String
+  projectName       String
+  directoryTree     String
+  mermaidCode       String?
+  workflowNotes     String?
+  aiWorkflowSummary String?
+  deletedAt         DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  @@index([userId, deletedAt, createdAt])
 }
 
-// 用户个人的大模型配置表
+model Note {
+  id         String     @id @default(cuid())
+  userId     String
+  title      String
+  content    String
+  summary    String     @default("")
+  tags       String     @default("")
+  deletedAt  DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  links      NoteLink[]
+
+  @@index([userId, deletedAt, createdAt])
+  @@index([userId, title])
+}
+
+model NoteLink {
+  id          String             @id @default(cuid())
+  sourceNoteId String
+  label       String
+  targetType  NoteLinkTargetType
+  targetId    String?
+  createdAt   DateTime           @default(now())
+  sourceNote  Note               @relation(fields: [sourceNoteId], references: [id], onDelete: Cascade)
+
+  @@index([sourceNoteId])
+  @@index([targetType, targetId])
+}
+
 model UserConfig {
-  userId      String   @id      // 直接用 Clerk 的 userId 作为主键
-  provider    String   @default("zhipu") // 比如 zhipu, deepseek, openai
-  apiKey      String?  // 用户的专属 Key
-  baseURL     String?  // 接口地址（比如 https://api.deepseek.com/v1）
-  modelName   String?  // 模型名称（比如 deepseek-coder）
-  
-  updatedAt   DateTime @updatedAt
+  userId    String   @id
+  provider  String   @default("zhipu")
+  apiKey    String?
+  baseURL   String?
+  modelName String?
+  updatedAt DateTime @updatedAt
 }

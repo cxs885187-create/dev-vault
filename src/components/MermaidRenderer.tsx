@@ -33,10 +33,10 @@ export function MermaidRenderer({ chartCode }: MermaidRendererProps) {
           setSvg(result.svg)
         }
       } catch (renderError) {
-        console.error('Mermaid 渲染失败:', renderError)
+        console.error('渲染 Mermaid 图表失败:', renderError)
 
         if (isActive) {
-          setError('Mermaid 结构图渲染失败，已保留原始图表代码供排查。')
+          setError('结构图渲染失败，已保留原始 Mermaid 代码供排查。')
         }
       }
     }
@@ -58,8 +58,8 @@ export function MermaidRenderer({ chartCode }: MermaidRendererProps) {
     <div className="overflow-hidden rounded-[28px] border border-stone-200/70 bg-white/80">
       <div className="surface-divider flex items-center justify-between px-5 py-4 first:border-t-0">
         <div>
-          <p className="section-kicker">Diagram</p>
-          <p className="mt-2 text-sm font-medium text-stone-700">项目结构图</p>
+          <p className="section-kicker">结构图</p>
+          <p className="mt-2 text-sm font-medium text-stone-700">Mermaid 架构图</p>
         </div>
         <span className="tag">Mermaid</span>
       </div>
@@ -74,9 +74,7 @@ export function MermaidRenderer({ chartCode }: MermaidRendererProps) {
 
       {error ? (
         <div className="space-y-3 px-6 py-6">
-          <div className="rounded-3xl border border-rose-200 bg-[var(--rose-soft)] px-4 py-3 text-sm text-rose-700">
-            {error}
-          </div>
+          <div className="rounded-3xl border border-rose-200 bg-[var(--rose-soft)] px-4 py-3 text-sm text-rose-700">{error}</div>
           <pre className="code-surface overflow-auto rounded-[24px] p-5 text-xs leading-6">
             <code>{chartCode}</code>
           </pre>

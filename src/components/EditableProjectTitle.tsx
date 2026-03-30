@@ -1,16 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { renameProject } from '@/actions/project'
+import type { ClientProject } from '@/lib/entities'
 
 interface Props {
   projectId: string
   initialName: string
+  onSaved?: (project: ClientProject) => void
 }
 
-export function EditableProjectTitle({ projectId, initialName }: Props) {
-  const router = useRouter()
+export function EditableProjectTitle({ projectId, initialName, onSaved }: Props) {
   const [isEditing, setIsEditing] = useState(false)
   const [name, setName] = useState(initialName)
   const [isSaving, setIsSaving] = useState(false)
@@ -45,15 +45,14 @@ export function EditableProjectTitle({ projectId, initialName }: Props) {
     setFeedback(null)
 
     const result = await renameProject(projectId, nextName)
-
     setIsSaving(false)
 
-    if (result?.error) {
+    if (!result.success || !result.project) {
       setFeedback(result.error)
       return
     }
 
-    router.refresh()
+    onSaved?.(result.project)
     setIsEditing(false)
   }
 
@@ -87,7 +86,7 @@ export function EditableProjectTitle({ projectId, initialName }: Props) {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h3 className="text-3xl font-semibold text-[var(--ink)]">{name}</h3>
-        <p className="mt-2 text-sm text-stone-500">保留项目级结构图、目录树和工作流复盘。</p>
+        <p className="mt-2 text-sm text-stone-500">保留结构图、目录树和工作流诊断，帮助你快速重建上下文。</p>
       </div>
       <button type="button" onClick={() => setIsEditing(true)} className="secondary-button">
         重命名

@@ -1,61 +1,72 @@
-// src/actions/snippet.ts
 'use server'
 
-import { prisma } from '../lib/prisma'
-import { generateCodeExplanation } from './ai'
+import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
-import { auth } from "@clerk/nextjs/server" // <--- 引入
+import { prisma } from '@/lib/prisma'
+import { generateCodeExplanation } from '@/actions/ai'
+import { serializeSnippet } from '@/lib/serializers'
+
+async function requireUserId() {
+  const { userId } = await auth()
+
+  if (!userId) {
+    throw new Error('未授权访问。')
+  }
+
+  return userId
+}
 
 export async function processAndSaveSnippet(fileName: string, code: string) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("未授权访问");
+  const userId = await requireUserId()
 
   try {
     const explanation = await generateCodeExplanation(code)
-
-    await prisma.snippet.create({
+    const snippet = await prisma.snippet.create({
       data: {
+        userId,
         title: fileName,
-        code: code,
+        code,
         language: fileName.split('.').pop() || 'text',
-        explanation: explanation,
-        userId, // <--- 注入拥有者 ID
-      }
+        explanation,
+      },
     })
 
     revalidatePath('/')
-    return { success: true }
+    return { success: true as const, snippet: serializeSnippet(snippet) }
   } catch (error) {
-    console.error("代码保存失败:", error)
-    return { error: '保存失败，请检查控制台' }
+    console.error('保存代码片段失败:', error)
+    return { success: false as const, error: '保存代码片段失败，请稍后重试。' }
   }
 }
-// src/actions/snippet.ts (追加到文件末尾)
 
 export async function renameSnippet(snippetId: string, newTitle: string) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("未授权访问");
+  const userId = await requireUserId()
+  const title = newTitle.trim()
 
-  if (!newTitle || !newTitle.trim()) {
-    return { error: "标题不能为空" };
+  if (!title) {
+    return { success: false as const, error: '标题不能为空。' }
   }
 
   try {
-    // 架构级防御：必须同时匹配 snippetId 和 userId，防止越权修改别人的数据
-    await prisma.snippet.update({
-      where: { 
-        id: snippetId,
-        userId: userId 
-      },
-      data: { 
-        title: newTitle.trim() 
-      }
-    });
+    const result = await prisma.snippet.updateMany({
+      where: { id: snippetId, userId, deletedAt: null },
+      data: { title },
+    })
 
-    revalidatePath('/'); // 瞬间刷新首页缓存
-    return { success: true };
+    if (!result.count) {
+      return { success: false as const, error: '没有找到可重命名的代码片段。' }
+    }
+
+    const snippet = await prisma.snippet.findUnique({ where: { id: snippetId } })
+
+    if (!snippet) {
+      return { success: false as const, error: '代码片段不存在。' }
+    }
+
+    revalidatePath('/')
+    return { success: true as const, snippet: serializeSnippet(snippet) }
   } catch (error) {
-    console.error("重命名失败:", error);
-    return { error: '重命名失败，请检查控制台' };
+    console.error('重命名代码片段失败:', error)
+    return { success: false as const, error: '重命名代码片段失败，请稍后重试。' }
   }
 }

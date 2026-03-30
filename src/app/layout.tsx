@@ -17,7 +17,7 @@ const jetBrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'DevVault | 开发者第二大脑',
-  description: '用更清晰的界面整理概念、代码片段和项目结构，让 AI 成为你的开发知识工作台。',
+  description: '用更清晰的界面整理概念、代码片段、项目结构与 Markdown 笔记，让 AI 成为你的知识工作台。',
 }
 
 export default function RootLayout({
@@ -28,9 +28,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="zh-CN">
-        <body className={`${manrope.variable} ${jetBrainsMono.variable}`}>
-          {children}
-        </body>
+        <body className={`${manrope.variable} ${jetBrainsMono.variable}`}>{children}</body>
       </html>
     </ClerkProvider>
   )

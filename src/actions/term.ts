@@ -1,31 +1,57 @@
-// src/actions/term.ts
 'use server'
 
-import { prisma } from '../lib/prisma'
-import { generateTermSummary } from './ai'
+import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
-import { auth } from "@clerk/nextjs/server" // <--- 引入
+import { prisma } from '@/lib/prisma'
+import { generateTermSummary } from '@/actions/ai'
+import { serializeTerm } from '@/lib/serializers'
 
-export async function createTermAction(formData: FormData) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("未授权访问"); // 安全左移：防黑客越权调用 API
+async function requireUserId() {
+  const { userId } = await auth()
 
-  const name = formData.get('name') as string
-  if (!name) return;
+  if (!userId) {
+    throw new Error('未授权访问。')
+  }
+
+  return userId
+}
+
+export async function createTerm(name: string) {
+  const userId = await requireUserId()
+  const normalizedName = name.trim()
+
+  if (!normalizedName) {
+    return { success: false as const, error: '概念名称不能为空。' }
+  }
 
   try {
-    const aiSummary = await generateTermSummary(name)
+    const existing = await prisma.term.findFirst({
+      where: { userId, name: normalizedName, deletedAt: null },
+      select: { id: true },
+    })
 
-    await prisma.term.create({
+    if (existing) {
+      return { success: false as const, error: '这个概念已经存在。' }
+    }
+
+    const aiSummary = await generateTermSummary(normalizedName)
+    const term = await prisma.term.create({
       data: {
-        name,
+        userId,
+        name: normalizedName,
         aiSummary,
-        userId, // <--- 核心：数据打上当前用户的思想钢印
-      }
+      },
     })
 
     revalidatePath('/')
+    return { success: true as const, term: serializeTerm(term) }
   } catch (error) {
-    console.error("保存失败:", error)
+    console.error('创建概念失败:', error)
+    return { success: false as const, error: '创建概念失败，请稍后重试。' }
   }
+}
+
+export async function createTermAction(formData: FormData) {
+  const name = formData.get('name')
+  return createTerm(typeof name === 'string' ? name : '')
 }

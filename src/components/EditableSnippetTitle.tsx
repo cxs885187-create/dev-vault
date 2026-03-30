@@ -1,16 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { renameSnippet } from '@/actions/snippet'
+import type { ClientSnippet } from '@/lib/entities'
 
 interface Props {
   snippetId: string
   initialTitle: string
+  onSaved?: (snippet: ClientSnippet) => void
 }
 
-export function EditableSnippetTitle({ snippetId, initialTitle }: Props) {
-  const router = useRouter()
+export function EditableSnippetTitle({ snippetId, initialTitle, onSaved }: Props) {
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState(initialTitle)
   const [isSaving, setIsSaving] = useState(false)
@@ -45,15 +45,14 @@ export function EditableSnippetTitle({ snippetId, initialTitle }: Props) {
     setFeedback(null)
 
     const result = await renameSnippet(snippetId, nextTitle)
-
     setIsSaving(false)
 
-    if (result?.error) {
+    if (!result.success || !result.snippet) {
       setFeedback(result.error)
       return
     }
 
-    router.refresh()
+    onSaved?.(result.snippet)
     setIsEditing(false)
   }
 
@@ -87,7 +86,7 @@ export function EditableSnippetTitle({ snippetId, initialTitle }: Props) {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h3 className="text-2xl font-semibold text-[var(--ink)]">{title}</h3>
-        <p className="mt-2 text-sm text-stone-500">保留这段代码的上下文说明，方便下次快速回忆。</p>
+        <p className="mt-2 text-sm text-stone-500">保留代码与说明，方便以后快速检索和复用。</p>
       </div>
       <button type="button" onClick={() => setIsEditing(true)} className="secondary-button">
         重命名
