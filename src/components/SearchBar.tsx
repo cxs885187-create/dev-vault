@@ -37,36 +37,28 @@ export function SearchBar() {
 
   return (
     <form key={query} onSubmit={handleSearch} className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">全局搜索</p>
         {query ? <span className="tag">已筛选</span> : null}
       </div>
 
-      <div className="relative">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           type="text"
           name="q"
           defaultValue={query}
           placeholder="搜索概念、代码片段、项目或笔记"
-          className="app-input pr-24 text-sm"
+          className="app-input min-w-0 flex-1 text-sm"
           aria-label="全局搜索"
         />
 
         {query ? (
-          <button
-            type="button"
-            onClick={() => submitSearch('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 text-xs font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-800"
-          >
+          <button type="button" onClick={() => submitSearch('')} className="secondary-button sm:flex-shrink-0">
             清除
           </button>
         ) : (
-          <button
-            type="submit"
-            disabled={isPending}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-[var(--ink)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#101826] disabled:opacity-60"
-          >
-            {isPending ? '搜索中' : '回车'}
+          <button type="submit" disabled={isPending} className="primary-button sm:flex-shrink-0">
+            {isPending ? '搜索中' : '搜索'}
           </button>
         )}
       </div>
